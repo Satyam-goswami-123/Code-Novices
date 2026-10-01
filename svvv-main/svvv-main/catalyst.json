@@ -1,0 +1,28 @@
+{
+  "client": {
+    "source": "frontend/dist"
+  },
+  "app_sail": {
+    "source": "backend"
+  },
+  "rules": [
+    {
+      "source": "/api/(.*)",
+      "target": "/server/abhedya_scrb_ai_backend/api/$1"
+    },
+    {
+      "source": "/api",
+      "target": "/server/abhedya_scrb_ai_backend/api"
+    },
+    {
+      "source": "/api-(.*)",
+      "target": "/server/abhedya_scrb_ai_backend/api-$1"
+    }
+  ],
+  "appsail": [
+    {
+      "source": "backend",
+      "name": "abhedya-scrb-ai-backend"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "abhedya-scrb-ai-backend",
+  "version": "1.0.0",
+  "stack": "python39",
+  "command": "/var/lang/bin/python3 start.py",
+  "scripts": {
+    "build": "/var/lang/bin/python3 -m pip install -r requirements.txt"
+  }
+}

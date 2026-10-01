@@ -1,0 +1,8 @@
+{
+	"command": "/var/lang/bin/pip3 install -r requirements.txt && /var/lang/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 9000",
+	"build_path": "./",
+	"stack": "python_3_9",
+	"env_variables": {},
+	"memory": 256,
+	"scripts": {}
+}

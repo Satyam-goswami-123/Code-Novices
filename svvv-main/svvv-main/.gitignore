@@ -1,0 +1,10 @@
+backend/.venv/
+backend/.env
+backend/ksp_crime.db
+.claude/
+backend/__pycache__/
+backend/app/__pycache__/
+frontend/node_modules/
+.vscode/
+.idea/
+*.pyc
