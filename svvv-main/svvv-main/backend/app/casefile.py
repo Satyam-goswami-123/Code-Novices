@@ -62,7 +62,7 @@ def render_case_file_pdf(account_id: int) -> tuple[bytes, str]:
     story.append(Paragraph(
         "You are hereby directed under Section 91 of the Code of Criminal Procedure, 1973 "
         "to immediately FREEZE the below-mentioned bank account, as it has been flagged by the "
-        "Abhedya-Chakra AI Engine for suspected high-velocity money laundering and mule activities.", 
+        "Abhedya-Chakra Engine for suspected high-velocity money laundering and mule activities.", 
         body
     ))
     story.append(Spacer(1, 0.5*cm))

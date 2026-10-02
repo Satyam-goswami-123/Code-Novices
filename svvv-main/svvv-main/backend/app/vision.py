@@ -34,7 +34,7 @@ def _vision_call_openrouter(image_b64: str, mime: str) -> Optional[dict]:
         "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "http://localhost:5173",
-        "X-Title": "Abhedya-Chakra AI",
+        "X-Title": "Abhedya-Chakra",
     }
     payload = {
         "model": "meta-llama/llama-3.2-11b-vision-instruct:free",

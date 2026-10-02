@@ -2,21 +2,19 @@ import React, { createContext, useContext, useState } from 'react'
 
 export const LANGUAGES = [
   { code: 'en', label: 'EN', name: 'English', flag: '🇮🇳' },
-  { code: 'kn', label: 'ಕನ್ನಡ', name: 'Kannada', flag: '🇮🇳' },
   { code: 'hi', label: 'हिंदी', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'te', label: 'తెలుగు', name: 'Telugu', flag: '🇮🇳' },
 ]
 
 const T = {
   en: {
     // Brand
-    brandName: 'Abhedya-Chakra AI',
+    brandName: 'Abhedya-Chakra',
     brandSub: 'Abhedya-Chakra',
     goodMorning: 'Good Morning',
 
     // Nav
     dashboard: 'Dashboard',
-    chat: 'Chat (EN / ಕನ್ನಡ / हिंदी)',
+    chat: 'Chat (EN / हिंदी)',
     detective: 'Detective Engine',
     vision: 'Vision Evidence',
     hotspots: 'Hotspots',
@@ -77,7 +75,7 @@ const T = {
   },
 
   kn: {
-    brandName: 'Abhedya-Chakra AI',
+    brandName: 'Abhedya-Chakra',
     brandSub: 'ಕರ್ನಾಟಕ ರಾಜ್ಯ ಅಪರಾಧ ದಾಖಲೆ ಬ್ಯೂರೋ',
     goodMorning: 'ಶುಭೋದಯ',
 
@@ -137,12 +135,12 @@ const T = {
   },
 
   hi: {
-    brandName: 'Abhedya-Chakra AI',
+    brandName: 'Abhedya-Chakra',
     brandSub: 'कर्नाटक राज्य अपराध अभिलेख ब्यूरो',
     goodMorning: 'सुप्रभात',
 
     dashboard: 'डैशबोर्ड',
-    chat: 'चैट (EN / ಕನ್ನಡ / हिंदी)',
+    chat: 'चैट (EN / हिंदी)',
     detective: 'AI जासूस',
     vision: 'दृश्य साक्ष्य',
     hotspots: 'हॉटस्पॉट',
@@ -197,7 +195,7 @@ const T = {
   },
 
   te: {
-    brandName: 'Abhedya-Chakra AI',
+    brandName: 'Abhedya-Chakra',
     brandSub: 'కర్ణాటక రాష్ట్ర నేర రికార్డుల బ్యూరో',
     goodMorning: 'శుభోదయం',
 

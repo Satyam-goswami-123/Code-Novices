@@ -10,6 +10,7 @@ export default function Hotspots() {
   const [bucketIdx, setBucketIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [txnId, setTxnId] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const playRef = useRef(null)
 
   const mapRef = useRef(null)
@@ -17,9 +18,10 @@ export default function Hotspots() {
 
   const loadData = () => {
     setBusy(true)
+    setErrorMsg('')
     const p = txnId ? api.hotspotsTrace(txnId) : api.hotspotsTimeline(1, '')
     p.then(t => { setTimeline(t); setBucketIdx(0) })
-      .catch(e => alert(e.message))
+      .catch(e => setErrorMsg('Transaction Not Found. Try a valid ID.'))
       .finally(() => setBusy(false))
   }
 
@@ -87,24 +89,24 @@ export default function Hotspots() {
         map: mapRef.current,
         paths: [[d.from_lat, d.from_lng], [d.to_lat, d.to_lng]],
         strokeColor: '#38bdf8',
-        strokeOpacity: 0.6,
-        strokeWeight: 2
+        strokeOpacity: 0.8,
+        strokeWeight: 3
       });
       elementsRef.current.push(p);
 
       const m1 = mapplsClassObject.Marker({
         map: mapRef.current,
         position: { lat: d.from_lat, lng: d.from_lng },
-        html: `<div style="background:#ef4444; width:10px; height:10px; border-radius:50%; border:1px solid white;"></div>`,
-        popupHtml: `<div>Victim Source: ${d.from_city}<br/>Outflow: ₹${d.amount}</div>`
+        html: `<div style="background:#ef4444; width:16px; height:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px 4px rgba(239,68,68,0.7); animation: pulseRed 1.5s infinite;"></div>`,
+        popupHtml: `<div style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; font-size:13px; min-width:140px;">Victim Source: <b>${d.from_city}</b><br/>Outflow: <span style="color:#ef4444; font-weight:bold;">₹${d.amount}</span></div>`
       });
       elementsRef.current.push(m1);
 
       const m2 = mapplsClassObject.Marker({
         map: mapRef.current,
         position: { lat: d.to_lat, lng: d.to_lng },
-        html: `<div style="background:#f59e0b; width:8px; height:8px; border-radius:50%; border:1px solid white;"></div>`,
-        popupHtml: `<div>Mule Node: ${d.to_city}<br/>Inflow: ₹${d.amount}</div>`
+        html: `<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px 4px rgba(245,158,11,0.7); animation: pulseOrange 1.5s infinite;"></div>`,
+        popupHtml: `<div style="background:#1e293b; color:#fff; padding:10px; border-radius:6px; font-family:sans-serif; font-size:13px; min-width:140px;">Mule Node: <b>${d.to_city}</b><br/>Inflow: <span style="color:#10b981; font-weight:bold;">₹${d.amount}</span></div>`
       });
       elementsRef.current.push(m2);
     });
@@ -112,9 +114,22 @@ export default function Hotspots() {
 
   return (
     <>
+      <style>{`
+        @keyframes pulseRed {
+          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { transform: scale(1.2); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulseOrange {
+          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+          70% { transform: scale(1.2); box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); }
+          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+      `}</style>
       <div className="topbar">
         <h1>🗺️ Geographic Fraud Dispersion</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {errorMsg && <div style={{color: '#ef4444', fontSize: 13, marginRight: 8, fontWeight: 600}}>{errorMsg}</div>}
           <input
             type="text"
             placeholder="Enter Transaction ID (e.g. TXN401119292)"

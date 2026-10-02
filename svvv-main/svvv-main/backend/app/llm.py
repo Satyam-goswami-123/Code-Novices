@@ -32,7 +32,7 @@ class LLMClient:
                                  base_url="https://openrouter.ai/api/v1",
                                  default_headers={
                                      "HTTP-Referer": "http://localhost:5173",
-                                     "X-Title": "Abhedya-Chakra AI",
+                                     "X-Title": "Abhedya-Chakra",
                                  })
             self.model = settings.OPENROUTER_MODEL
         elif self.provider == "gemini":

@@ -71,7 +71,7 @@ export default function Login() {
               />
               <div>
                 <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, letterSpacing: '0.5px', color: '#fff', lineHeight: 1.1 }}>
-                  Abhedya-Chakra AI
+                  Abhedya-Chakra
                 </h1>
                 <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', fontWeight: 600, marginTop: 4 }}>
                   Abhedya-Chakra

@@ -59,7 +59,6 @@ function Shell({ children }) {
 
   const navItems = [
     { to: '/', end: true, icon: LayoutDashboard, label: t.dashboard },
-    { to: '/vision', icon: Database, label: 'Data Ingestion' },
     { to: '/detective', icon: Search, label: t.detective },
     { to: '/hotspots', icon: Compass, label: t.hotspots },
     { to: '/trends', icon: TrendingUp, label: t.trends },
@@ -187,8 +186,20 @@ function Shell({ children }) {
         </div>
       )}
 
-      <main className="main">
-        {children}
+      <main className="main" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+        <footer style={{ marginTop: '40px', padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--muted)', fontSize: 12, borderTop: '1px solid var(--line)', background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, color: 'var(--accent)', letterSpacing: 1 }}>ABHEDYA-CHAKRA ENGINE</span>
+            <span style={{ width: 4, height: 4, borderRadius: 2, background: 'var(--accent)' }}></span>
+            <span>Neural Network Tracing System</span>
+          </div>
+          <div style={{ fontWeight: 600 }}>
+            VoidHacks Datathon Build • For Official Law Enforcement Use Only
+          </div>
+        </footer>
         <AlertsToaster />
       </main>
 
