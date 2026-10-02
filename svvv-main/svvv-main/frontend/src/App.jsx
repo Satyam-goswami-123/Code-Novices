@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { getToken, getUser, clearAuth, api } from './api'
-import { LayoutDashboard, MessageCircle, Search, Camera, Compass, TrendingUp, Network as NetworkIcon, BellRing, Route as RouteIcon, FlaskConical, Mic, ShieldCheck, Menu, X } from 'lucide-react'
+import { LayoutDashboard, MessageCircle, Search, Camera, Database, Compass, TrendingUp, Network as NetworkIcon, BellRing, Route as RouteIcon, FlaskConical, Mic, ShieldCheck, Menu, X } from 'lucide-react'
 import { useLang } from './i18n.jsx'
 import LanguageSwitcher from './components/LanguageSwitcher.jsx'
 import Login from './pages/Login.jsx'
@@ -19,7 +19,6 @@ import Detective from './pages/Detective.jsx'
 import Vision from './pages/Vision.jsx'
 import Patrol from './pages/Patrol.jsx'
 import PatrolRoute from './pages/PatrolRoute.jsx'
-import WhatIf from './pages/WhatIf.jsx'
 import AlertsToaster from './components/AlertsToaster.jsx'
 
 function Shell({ children }) {
@@ -60,15 +59,14 @@ function Shell({ children }) {
 
   const navItems = [
     { to: '/', end: true, icon: LayoutDashboard, label: t.dashboard },
-    { to: '/chat', icon: MessageCircle, label: t.chat },
+    { to: '/vision', icon: Database, label: 'Data Ingestion' },
     { to: '/detective', icon: Search, label: t.detective },
-    { to: '/vision', icon: Camera, label: t.vision },
     { to: '/hotspots', icon: Compass, label: t.hotspots },
     { to: '/trends', icon: TrendingUp, label: t.trends },
     { to: '/network', icon: NetworkIcon, label: t.network },
+    { to: '/chat', icon: MessageCircle, label: t.chat },
     { to: '/predict', icon: BellRing, label: t.alerts },
     { to: '/patrol-route', icon: RouteIcon, label: t.patrolRoute },
-    { to: '/whatif', icon: FlaskConical, label: t.whatif },
     { to: '/patrol', icon: Mic, label: t.patrol },
     ...(canAudit ? [{ to: '/audit', icon: ShieldCheck, label: t.audit }] : []),
   ]
@@ -234,7 +232,6 @@ export default function App() {
       <Route path="/network" element={<Private><Network /></Private>} />
       <Route path="/predict" element={<Private><Predict /></Private>} />
       <Route path="/patrol-route" element={<Private><PatrolRoute /></Private>} />
-      <Route path="/whatif" element={<Private><WhatIf /></Private>} />
       <Route path="/patrol" element={<Private><Patrol /></Private>} />
       <Route path="/audit" element={<Private><Audit /></Private>} />
     </Routes>

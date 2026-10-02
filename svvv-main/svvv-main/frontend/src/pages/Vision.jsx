@@ -3,101 +3,87 @@ import { api } from '../api'
 
 export default function Vision(){
   const fileRef = useRef(null)
-  const [preview,setPreview] = useState(null)
-  const [busy,setBusy] = useState(false)
-  const [result,setResult] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState(null)
 
-  const onFile = e => {
-    const f = e.target.files[0]
-    if(!f) return
-    setPreview(URL.createObjectURL(f))
-    setResult(null)
-  }
   const analyze = async () => {
     const f = fileRef.current?.files?.[0]
-    if(!f){ alert('Pick an image first'); return }
+    if(!f){ alert('Pick a CSV file first'); return }
     setBusy(true)
-    try { setResult(await api.vision(f)) }
-    catch(e){ setResult({error: e.message}) }
-    finally { setBusy(false) }
+    
+    try {
+      const res = await api.ingest(f)
+      setResult({
+        success: true,
+        filename: f.name,
+        size: (f.size / (1024*1024)).toFixed(2),
+        rows_indexed: res.rows_indexed,
+        ingest_time: res.ingest_time,
+      })
+    } catch (e) {
+      alert("Ingestion failed: " + e.message)
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
     <>
       <div className="topbar">
-        <h1>📸 Vision Evidence Analysis</h1>
-        <span className="pill warn">OpenRouter · llama-3.2-vision</span>
+        <h1>📊 High-Throughput Data Ingestion</h1>
+        <span className="pill ok">DuckDB / SQLite Engine</span>
       </div>
 
       <div className="card">
         <p className="dim" style={{marginTop:0}}>
-          Upload a CCTV still, crime-scene photo, or evidence image. The vision model extracts
-          weapons, vehicles, persons, and location clues, then searches the FIR database for
-          matching past incidents.
+          Upload a raw multi-bank transaction export (e.g., <b>VoidHacks8_MuleAccount_2M_Transactions.csv</b>). 
+          The backend engine will instantly parse, normalize, and index the millions of rows into the 
+          Rule-Based Graph database, automatically mapping IFCS codes, IPs, and Mule topologies.
         </p>
-        <input ref={fileRef} type="file" accept="image/*" onChange={onFile}/>
+        <input ref={fileRef} type="file" accept=".csv" />
         <button className="primary" style={{marginLeft:8}} onClick={analyze} disabled={busy}>
-          {busy?'Analyzing…':'🔍 Analyze image'}
+          {busy ? 'Indexing Data (Please Wait)...' : '⚙️ Upload & Index CSV'}
         </button>
       </div>
 
-      {preview && (
-        <div className="row">
-          <div className="card col">
-            <h3 style={{marginTop:0}}>Evidence</h3>
-            <img src={preview} alt="evidence" style={{maxWidth:'100%',borderRadius:8,border:'1px solid var(--line)'}}/>
-          </div>
-          <div className="card col">
-            <h3 style={{marginTop:0}}>Extracted entities</h3>
-            {!result && <div className="dim">Click analyze to extract.</div>}
-            {result?.error && <div className="alert">{result.error}</div>}
-            {result?.extracted && (
-              <div>
-                <div style={{marginBottom:8}}><b>Scene:</b> {result.extracted.scene_summary}</div>
-                <div className="dim" style={{marginBottom:8}}>Confidence: <span className="badge">{result.extracted.confidence}</span></div>
-                {result.extracted.weapons?.length>0 && <div><b>🔫 Weapons:</b> {result.extracted.weapons.join(', ')}</div>}
-                {result.extracted.vehicles?.length>0 && (
-                  <div><b>🚗 Vehicles:</b>
-                    <ul style={{margin:'4px 0 8px 18px'}}>
-                      {result.extracted.vehicles.map((v,i)=><li key={i}>
-                        {v.type} {v.color && `(${v.color})`} {v.plate && ` plate:${v.plate}`}
-                      </li>)}
-                    </ul>
-                  </div>
-                )}
-                {result.extracted.persons?.length>0 && (
-                  <div><b>👥 Persons:</b>
-                    <ul style={{margin:'4px 0 8px 18px'}}>
-                      {result.extracted.persons.map((p,i)=><li key={i}>{p.description} (×{p.count})</li>)}
-                    </ul>
-                  </div>
-                )}
-                {result.extracted.location_clues?.length>0 && (
-                  <div><b>📍 Location clues:</b> {result.extracted.location_clues.join('; ')}</div>
-                )}
-                {result.extracted.suspected_crime_categories?.length>0 && (
-                  <div style={{marginTop:6}}><b>Likely crime:</b> {result.extracted.suspected_crime_categories.map(c=><span key={c} className="badge" style={{marginRight:4}}>{c}</span>)}</div>
-                )}
-              </div>
-            )}
+      {busy && (
+        <div className="card" style={{textAlign: 'center', padding: 40}}>
+          <h3>Streaming into Graph Engine...</h3>
+          <div className="dim">Parsing entities, calculating degree centrality, and evaluating L1/L2 Mule Risks.</div>
+          <div style={{marginTop: 20, width: '100%', height: 8, background: 'var(--line)', borderRadius: 4, overflow: 'hidden'}}>
+            <div style={{width: '50%', height: '100%', background: 'var(--accent)', animation: 'pulse 1s infinite alternate'}} />
           </div>
         </div>
       )}
 
-      {result?.matches?.length > 0 && (
-        <div className="card">
-          <h3 style={{marginTop:0}}>🎯 Matching FIRs ({result.matches.length})</h3>
-          <div className="dim" style={{marginBottom:8}}>Search query: <i>{result.query}</i></div>
-          {result.matches.map(m=>(
-            <div key={m.id} style={{padding:10,border:'1px solid var(--line)',borderRadius:8,marginBottom:8,background:'var(--panel2)'}}>
-              <div style={{display:'flex',justifyContent:'space-between'}}>
-                <b>{m.fir_number}</b>
-                <span className="badge">{(m.similarity*100).toFixed(0)}% match</span>
-              </div>
-              <div className="dim" style={{fontSize:12}}>{m.crime_type} · {m.district} · {m.station} · {m.occurred_at?.slice(0,10)}</div>
-              <div style={{fontSize:13,marginTop:4}}>{m.description}</div>
+      {result?.success && (
+        <div className="card" style={{border: '1px solid #10b981', background: '#ecfdf5'}}>
+          <h3 style={{marginTop:0, color: '#065f46'}}>✅ Ingestion Complete</h3>
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16, color: '#064e3b'}}>
+            <div>
+              <div className="dim" style={{color: '#047857'}}>Filename</div>
+              <div style={{fontWeight: 600}}>{result.filename}</div>
             </div>
-          ))}
+            <div>
+              <div className="dim" style={{color: '#047857'}}>File Size</div>
+              <div style={{fontWeight: 600}}>{result.size} MB</div>
+            </div>
+            <div>
+              <div className="dim" style={{color: '#047857'}}>Total Rows Indexed</div>
+              <div style={{fontWeight: 600, fontSize: 18}}>{result.rows_indexed.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="dim" style={{color: '#047857'}}>Ingestion Speed</div>
+              <div style={{fontWeight: 600}}>{result.ingest_time}</div>
+            </div>
+          </div>
+          <div style={{marginTop: 16, paddingTop: 16, borderTop: '1px solid #a7f3d0'}}>
+            <p style={{margin: 0, fontSize: 13, color: '#047857'}}>
+              The data has been successfully mapped to the Graph Engine. 
+              You can now navigate to the <b>Money Mule Network</b> tab to trace transactions, 
+              or the <b>Conversational AI</b> tab to query the dataset.
+            </p>
+          </div>
         </div>
       )}
     </>

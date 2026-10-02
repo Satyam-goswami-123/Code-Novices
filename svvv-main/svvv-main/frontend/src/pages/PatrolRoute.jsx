@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Popup, CircleMarker } from 'react-leaflet'
+import { mappls } from 'mappls-web-maps'
+const mapplsClassObject = new mappls();
 import { api } from '../api'
 import { Car, Compass, Map } from 'lucide-react';
 
@@ -77,22 +78,7 @@ export default function PatrolRoute(){
           </div>
           <div className="card" style={{padding:0,overflow:'hidden'}}>
             <div className="map">
-              <MapContainer center={center} zoom={10} style={{height:'100%',width:'100%'}}>
-                <TileLayer attribution="© OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-                <Polyline positions={tour.map(p=>[p.lat,p.lng])}
-                  pathOptions={{color:'#4f8cff', weight:4, dashArray:'8,6'}}/>
-                {tour.map((p,i)=>(
-                  i===0 || i===tour.length-1
-                    ? <Marker key={i} position={[p.lat,p.lng]}>
-                        <Popup><b>{i===0?'START':'END'} — {p.name}</b></Popup>
-                      </Marker>
-                    : <CircleMarker key={i} center={[p.lat,p.lng]} radius={10}
-                        pathOptions={{color:'#ef4444',fillColor:'#ef4444',fillOpacity:0.6}}>
-                        <Popup><b>Stop #{i}</b><br/>{p.name}<br/>intensity {Math.round(p.intensity)}</Popup>
-                      </CircleMarker>
-                ))}
-              </MapContainer>
+              <div id="mappls-map-patrol" style={{height:'100%',width:'100%'}}></div>
             </div>
           </div>
           <div className="card">

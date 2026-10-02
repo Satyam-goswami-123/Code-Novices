@@ -65,8 +65,18 @@ export const api = {
     const q = new URLSearchParams(params).toString()
     return req(`/api/network${q?'?'+q:''}`)
   },
+  traceTransaction: async (txn_id) => {
+    const r = await fetch('http://127.0.0.1:8001/api/trace', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_number: txn_id })
+    });
+    if(!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
+    return r.json();
+  },
   predict: () => req('/api/predict'),
   predictStream: () => req('/api/predict/stream'),
+  hotspotsTrace: (txn_id) => req(`/api/hotspots/trace/${encodeURIComponent(txn_id)}`),
 
   detective: (narrative, crime_type, district_id) =>
     req('/api/detective/investigate', {method:'POST', json:{narrative, crime_type, district_id}}),
@@ -74,6 +84,14 @@ export const api = {
   vision: async (file) => {
     const fd = new FormData(); fd.append('file', file)
     const r = await fetch(BASE_URL + '/api/vision/analyze', {method:'POST',
+      headers:{'Authorization':`Bearer ${getToken()}`}, body: fd})
+    if(!r.ok) throw new Error(`${r.status}: ${await r.text()}`)
+    return r.json()
+  },
+  
+  ingest: async (file) => {
+    const fd = new FormData(); fd.append('file', file)
+    const r = await fetch(BASE_URL + '/api/ingest', {method:'POST',
       headers:{'Authorization':`Bearer ${getToken()}`}, body: fd})
     if(!r.ok) throw new Error(`${r.status}: ${await r.text()}`)
     return r.json()

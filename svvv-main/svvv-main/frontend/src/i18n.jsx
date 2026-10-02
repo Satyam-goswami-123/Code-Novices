@@ -17,7 +17,7 @@ const T = {
     // Nav
     dashboard: 'Dashboard',
     chat: 'Chat (EN / ಕನ್ನಡ / हिंदी)',
-    detective: 'AI Detective',
+    detective: 'Detective Engine',
     vision: 'Vision Evidence',
     hotspots: 'Hotspots',
     trends: 'Trends',

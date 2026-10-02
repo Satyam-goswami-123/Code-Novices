@@ -39,8 +39,6 @@ LIVE_ALERTS = {"last_alert_ids": set(), "events": []}
 def _startup():
     init_db()
     audit_chain.ensure_columns()
-    try: build_index()
-    except Exception as e: print("Semantic index build failed:", e)
 
 
 def audit(user: dict, action: str, success: bool, nl: str = "", sql: str = "",
@@ -268,43 +266,29 @@ def export_pdf(sid: int, user = Depends(require("export"))):
 
 
 # --------- analytics ---------
-@app.get("/api/trends")
-def trends(crime_type: Optional[str] = None, months: int = 24,
-           user = Depends(require("trends"))):
-    return analytics.trends(crime_type, months)
-
-@app.get("/api/hotspots")
-def hotspots(months: int = 12, crime_type: Optional[str] = None, top: int = 200,
-             user = Depends(require("hotspots"))):
-    return analytics.hotspots(months, crime_type, top)
-
-@app.get("/api/hotspots/timeline")
-def hotspots_timeline(months: int = 36, crime_type: Optional[str] = None,
-                      user = Depends(require("hotspots"))):
-    return timeline_mod.hotspot_timeline(months, crime_type)
+@app.get("/api/trace/{txn_id}")
+def trace_transaction(txn_id: str, user = Depends(require("networks"))):
+    return analytics.trace_funds(txn_id)
 
 @app.get("/api/network")
-def network(person_id: Optional[int] = None, district_id: Optional[int] = None,
-            min_strength: float = 1.0, limit: int = 80,
-            user = Depends(require("networks"))):
-    return analytics.network(person_id, district_id, min_strength, limit)
+def network(limit: int = 100, user = Depends(require("networks"))):
+    return analytics.mule_network(limit)
 
 @app.get("/api/predict")
 def predict(user = Depends(require("predict"))):
-    alerts = analytics.predict_risk()
+    alerts = analytics.predict_fraud_alerts()
     # Track new alerts for live notifications
-    keys = {(a["district"], a["crime_type"]) for a in alerts}
+    keys = {(a["account"], a["reason"]) for a in alerts}
     new = keys - LIVE_ALERTS["last_alert_ids"]
     if new and LIVE_ALERTS["last_alert_ids"]:
         for k in new:
             for a in alerts:
-                if (a["district"], a["crime_type"]) == k:
+                if (a["account"], a["reason"]) == k:
                     LIVE_ALERTS["events"].append({"ts": time.time(), **a})
                     break
     LIVE_ALERTS["last_alert_ids"] = keys
     LIVE_ALERTS["events"] = LIVE_ALERTS["events"][-20:]
     return alerts
-
 
 @app.get("/api/predict/stream")
 def predict_stream(user = Depends(require("predict"))):
@@ -312,6 +296,15 @@ def predict_stream(user = Depends(require("predict"))):
     ev = LIVE_ALERTS["events"][:]
     LIVE_ALERTS["events"] = []
     return ev
+
+
+# --------- Data Ingestion ---------
+from .ingest import ingest_csv
+
+@app.post("/api/ingest")
+async def api_ingest_csv(file: UploadFile = File(...), user = Depends(require("networks"))):
+    # This calls the fast csv parser in ingest.py
+    return ingest_csv(file)
 
 
 # --------- AI Detective ---------
@@ -394,76 +387,84 @@ def whatif(payload: WhatIfIn, user = Depends(require("predict"))):
     return whatif_mod.simulate(payload.district_id, payload.officers_pct,
                                 payload.cctv_pct, payload.community_pct, payload.months)
 
+@app.get("/api/hotspots/timeline")
+def get_hotspots_timeline(months: int = 36, crime_type: Optional[str] = None, user = Depends(current_user)):
+    return timeline_mod.hotspot_timeline(months, crime_type)
+
+@app.get("/api/hotspots/trace/{txn_id}")
+def trace_hotspots_route(txn_id: str, user = Depends(current_user)):
+    res = timeline_mod.trace_hotspots(txn_id)
+    if "error" in res:
+        raise HTTPException(404, res["error"])
+    return res
 
 # --------- reference data ---------
 @app.get("/api/meta/districts")
 def districts(user = Depends(current_user)):
-    conn = get_conn()
-    try:
-        return [dict(r) for r in conn.execute(
-            "SELECT id,name,lat,lng FROM districts ORDER BY name")]
-    finally: conn.close()
-
+    return []
 
 @app.get("/api/meta/stations")
 def stations(district_id: Optional[int] = None, user = Depends(current_user)):
-    conn = get_conn()
-    try:
-        if district_id:
-            rows = conn.execute(
-                "SELECT id,name,district_id FROM stations WHERE district_id=? ORDER BY name",
-                (district_id,)).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id,name,district_id FROM stations ORDER BY name LIMIT 200").fetchall()
-        return [dict(r) for r in rows]
-    finally: conn.close()
-
+    return []
 
 @app.get("/api/meta/crime-types")
 def crime_types(user = Depends(current_user)):
-    conn = get_conn()
-    try:
-        return [r[0] for r in conn.execute("SELECT DISTINCT crime_type FROM firs ORDER BY crime_type")]
-    finally: conn.close()
-
+    return []
 
 @app.get("/api/meta/stats")
 def stats(user = Depends(current_user)):
     conn = get_conn()
     try:
         return {
-            "firs": conn.execute("SELECT COUNT(*) FROM firs").fetchone()[0],
-            "persons": conn.execute("SELECT COUNT(*) FROM persons").fetchone()[0],
-            "stations": conn.execute("SELECT COUNT(*) FROM stations").fetchone()[0],
-            "districts": conn.execute("SELECT COUNT(*) FROM districts").fetchone()[0],
+            "firs": conn.execute("SELECT COUNT(*) FROM transactions").fetchone()[0],
+            "persons": conn.execute("SELECT COUNT(*) FROM accounts").fetchone()[0],
+            "stations": conn.execute("SELECT COUNT(*) FROM mule_links").fetchone()[0],
+            "districts": 0,
             "provider": llm.provider,
         }
     finally: conn.close()
 
-
 @app.get("/api/meta/districts/geojson")
 def districts_geojson(user = Depends(current_user)):
-    return geo_mod.districts_geojson()
+    return {"type": "FeatureCollection", "features": []}
 
+@app.get("/api/trends")
+def trends(months: int = 12, user = Depends(current_user)):
+    conn = get_conn()
+    try:
+        # Group by bank name to see which banks are most exploited
+        sql = """SELECT substr(t.timestamp, 1, 10) AS bucket, a.bank_name AS crime_type, COUNT(*) AS n 
+                 FROM transactions t
+                 JOIN accounts a ON t.receiver_account_id = a.id
+                 GROUP BY bucket, a.bank_name"""
+        return [dict(r) for r in conn.execute(sql).fetchall()]
+    finally:
+        conn.close()
+
+@app.get("/api/predict")
+def predict_alerts(user = Depends(current_user)):
+    conn = get_conn()
+    try:
+        # Find top nodes with high transaction volume to flag as 'mule clusters'
+        sql = """SELECT payment_mode, COUNT(*) as c, SUM(amount) as amt
+                 FROM transactions WHERE is_flagged = 1 OR amount > 50000
+                 GROUP BY payment_mode ORDER BY amt DESC LIMIT 5"""
+        rows = conn.execute(sql).fetchall()
+        alerts = []
+        for r in rows:
+            alerts.append({
+                "district": f"Network Cluster ({r['payment_mode']})",
+                "crime_type": "Mule Ring Detection",
+                "uplift_pct": min(999, int((r['c'] / 100) * 100)),
+                "reason": f"Anomalous high-value volume detected: {r['c']} suspicious hops totaling ₹{r['amt']:,.0f}"
+            })
+        return alerts
+    finally:
+        conn.close()
 
 @app.get("/api/meta/districts/crime-intensity")
 def district_intensity(months: int = 12, user = Depends(current_user)):
-    """For choropleth: per-district crime count + intensity score."""
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT d.id, d.name, d.lat, d.lng, COUNT(f.id) AS n,
-                   AVG(f.severity) AS avg_sev
-            FROM districts d LEFT JOIN firs f
-              ON f.district_id=d.id AND f.occurred_at >= date('now', ?)
-            GROUP BY d.id ORDER BY n DESC""", (f"-{months} months",)).fetchall()
-        out = [dict(r) for r in rows]
-        max_n = max([r["n"] for r in out] + [1])
-        for r in out:
-            r["intensity"] = round((r["n"] / max_n) * (r["avg_sev"] or 5)/10, 3)
-        return out
-    finally: conn.close()
+    return []
 
 
 # --------- audit ---------

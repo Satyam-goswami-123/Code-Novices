@@ -132,13 +132,14 @@ export default function Chat(){
   }
 
   const suggestions = lang.startsWith('kn') ? [
-    "ಬೆಂಗಳೂರು ನಗರದಲ್ಲಿ ಕಳೆದ 6 ತಿಂಗಳ ಕಳ್ಳತನ ಪ್ರಕರಣಗಳು ಎಷ್ಟು?",
-    "ಮೈಸೂರಿನಲ್ಲಿ ಅತಿ ಹೆಚ್ಚು ಪುನರಾವರ್ತಿತ ಆರೋಪಿ ಯಾರು?"
+    "ಖಾತೆ 12345 ರ ಜಾಡನ್ನು ಪತ್ತೆ ಹಚ್ಚಿ.",
+    "ಕಳೆದ 7 ದಿನಗಳಲ್ಲಿ ಅತಿ ಹೆಚ್ಚು ವಹಿವಾಟು ನಡೆಸಿದ ಖಾತೆಗಳನ್ನು ತೋರಿಸಿ."
   ] : [
-    "How many murders in Bengaluru Urban over the last 12 months?",
-    "Top 5 repeat offenders across Voidhack by FIR count",
-    "Which districts saw the biggest cybercrime rise recently?",
-    "Show co-accused network around person id 1",
+    "Trace victim account 123456789012 across 4 hops.",
+    "Top 5 mule accounts by transaction velocity in the last 7 days.",
+    "Which banks saw the biggest spike in suspicious transfers recently?",
+    "Show mule ring network around account id 987654321000.",
+    "Generate freeze notice for all accounts linked to victim id 12345.",
   ]
 
   return (
@@ -175,8 +176,8 @@ export default function Chat(){
           <div className="chat-messages">
             {messages.length===0 && (
               <div style={{margin:'auto',maxWidth:520,textAlign:'center'}}>
-                <h3>Ask anything about Voidhack crime data</h3>
-                <div className="dim">English or Kannada. Voice supported. Toggle multi-agent for deep investigations.</div>
+                <h3>Ask anything about Abhedya-Chakra financial data</h3>
+                <div className="dim">English or Kannada. Voice supported. Toggle multi-agent for tracing mule networks.</div>
                 <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:6}}>
                   {suggestions.map((s,i)=>(
                     <button key={i} onClick={()=>send(s)} style={{textAlign:'left'}}>{s}</button>

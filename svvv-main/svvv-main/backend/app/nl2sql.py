@@ -8,36 +8,22 @@ from .llm import llm
 from .db import get_conn
 
 SCHEMA_DOC = """
-You are a senior crime-data analyst for Abhedya-Chakra Police (Abhedya).
-You translate natural-language questions (English or Kannada) into SAFE READ-ONLY SQLite SQL
+You are a senior financial crime-data analyst for Abhedya-Chakra.
+You translate natural-language questions into SAFE READ-ONLY SQL
 against this schema, and produce a short explanation.
 
 TABLES:
-  districts(id, name, lat, lng)
-  stations(id, name, district_id, lat, lng)
-  persons(id, full_name, age, gender, occupation, education, address, district_id, aliases)
-  firs(id, fir_number, station_id, district_id, crime_type, ipc_sections, description,
-       occurred_at TEXT ISO8601, reported_at TEXT, lat, lng,
-       status IN ('open','under_investigation','chargesheeted','closed'),
-       severity INTEGER 1-10, weapon_used, motive)
-  fir_accused(fir_id, person_id, role)
-  fir_victims(fir_id, person_id)
-  person_associations(person_a, person_b, relation, strength)
-
-CRIME TYPES: Theft, Burglary, Robbery, Dacoity, Assault, Murder, Attempt to Murder, Kidnapping,
-  Cheating/Fraud, Cybercrime, Drug Trafficking, Vehicle Theft, POCSO, Domestic Violence,
-  Riot, Arson, Counterfeiting, Extortion.
+  accounts(id, account_number, ifsc_code, bank_name, account_holder_name, age, gender, address, city, state, risk_score, is_frozen)
+  transactions(id, txn_id, sender_account_id, receiver_account_id, amount, currency, timestamp, payment_mode, ip_address, device_id, narration, is_flagged)
+  fraud_reports(id, report_id, victim_account_id, initial_txn_id, reported_at, description, status)
+  mule_links(sender_id, receiver_id, total_volume, txn_count)
 
 RULES:
 - Output ONLY a JSON object: {"sql": "...", "answer": "...", "rationale": "..."}
-- SQL MUST be a single SELECT (no INSERT/UPDATE/DELETE/DROP/PRAGMA/ATTACH).
+- SQL MUST be a single SELECT (no INSERT/UPDATE/DELETE).
 - Use LIMIT 200 unless aggregating.
-- For "last N months/years" use date('now','-N months') comparisons on occurred_at.
-- ALWAYS give every selected column a clear, human-readable alias with AS, especially
-  for aggregates (e.g., COUNT(*) AS total_cases, AVG(severity) AS avg_severity).
-  Never leave a column named COUNT(...), SUM(...), or t.col — always alias it in snake_case.
+- ALWAYS give every selected column a clear, human-readable alias with AS.
 - If the question is not data-related, set sql to null and explain in `answer`.
-- If Kannada input, still produce SQL; answer in the same language as the question.
 """
 
 FORBIDDEN = re.compile(r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|replace)\b", re.I)
@@ -89,9 +75,21 @@ def answer_question(nl_query: str, history: Optional[list] = None) -> dict:
             cols, rows = run_sql(sql)
             result["columns"] = cols
             result["rows"] = rows
-            # If model didn't write an answer, synthesize a brief one
-            if not result["answer"]:
-                result["answer"] = f"Returned {len(rows)} row(s)."
+            if len(rows) > 0:
+                # 2-step Text-to-SQL: Generate a natural language summary from the actual data!
+                summary_prompt = (
+                    f"User asked: {nl_query}\n\n"
+                    f"Database results (JSON):\n{json.dumps(rows[:30])}\n\n"
+                    f"Provide a clear, brief, simple, and understandable natural-language answer to the user based ONLY on the data above. Do not mention SQL or databases."
+                )
+                try:
+                    # Request text-only response for the summary
+                    final_answer = llm.complete("You are a helpful financial crime analyst.", summary_prompt, json_mode=False, max_tokens=300)
+                    result["answer"] = final_answer
+                except Exception:
+                    result["answer"] = f"Returned {len(rows)} row(s)."
+            else:
+                result["answer"] = "No matching records found in the database."
         except Exception as e:
             result["ok"] = False
             result["error"] = f"SQL execution failed: {e}"
